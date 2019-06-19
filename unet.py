@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdb
 import time
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torch.utils.data as utils
-from torch.autograd import Variable
+#
+#import torch
+#import torch.nn as nn
+#import torch.nn.functional as F
+#import torch.optim as optim
+#import torch.utils.data as utils
+#from torch.autograd import Variable
 
 #===============================================================================
 def main():
@@ -19,6 +19,7 @@ def main():
     files = []
     for h in range(7,12):
         for m in range(0,60,5):
+            #files.append('{}/20190216{:02d}{:02d}_nimrod_ng_radar_rainrate_composite_1km_UK'.format(datadir, h, m))
             files.append('{}/20180727{:02d}{:02d}_nimrod_ng_radar_rainrate_composite_1km_UK'.format(datadir, h, m))
 
     train_loader = load_data(files)
@@ -67,6 +68,17 @@ def load_data(files):
     #cube = cube[:10*(cube.shape[0]//10), 1000:3560, 1000:2280]
     cube_data = cube.data
     print(np.shape(cube_data))
+
+    # rotate and append data for data augmentation
+    cube_data2 = cube_data1.copy()
+    cube_data3 = cube_data1.copy()
+    for time in range(np.shape(cube_data1)[0]):
+        cube_data2[time] = np.rot90(cube_data1[time])
+        cube_data3[time] = np.rot90(cube_data2[time])
+
+    cube_data = np.append(cube_data1, cube_data2, axis=0)
+    cube_data = np.append(aug_data, cube_data3, axis=0)
+
     split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4))
     print(np.shape(split_data_1))
     split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[1]/128, -2))
