@@ -66,8 +66,8 @@ def load_data(files):
     #pdb.set_trace()
     cube = cube[:, 500:1780, 200:1480]
     #cube = cube[:10*(cube.shape[0]//10), 1000:3560, 1000:2280]
-    cube_data = cube.data
-    print(np.shape(cube_data))
+    cube_data1 = cube.data
+    print(np.shape(cube_data1))
 
     # rotate and append data for data augmentation
     cube_data2 = cube_data1.copy()
