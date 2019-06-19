@@ -38,8 +38,8 @@ def main():
     test_loader = load_data(files3)
 
     unet = UNet()
-    val_loss, len_val_data = train_net(unet, batch_size=100, n_epochs=10,
-                                       learning_rate=0.01, train_loader, val_loader)
+    val_loss, len_val_data = train_net(unet, train_loader, val_loader, batch_size=100,
+                                       n_epochs=10, learning_rate=0.01)
     # Print model's state_dict
     print("Model's state_dict:")
     for param_tensor in unet.state_dict():
@@ -100,7 +100,7 @@ def createLossAndOptimizer(net, learning_rate=0.01):
     return(loss, optimizer)
 
 #===============================================================================
-def train_net(net, batch_size, n_epochs, learning_rate, train_loader, val_loader):
+def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate):
 
     #Print the hyperparameters of the training run:
     print("===== HYPERPARAMETERS =====")
