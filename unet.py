@@ -77,7 +77,7 @@ def load_data(files):
         cube_data3[time] = np.rot90(cube_data2[time])
 
     cube_data = np.append(cube_data1, cube_data2, axis=0)
-    cube_data = np.append(aug_data, cube_data3, axis=0)
+    cube_data = np.append(cube_data, cube_data3, axis=0)
 
     split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4))
     print(np.shape(split_data_1))
