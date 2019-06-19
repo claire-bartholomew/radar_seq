@@ -52,6 +52,8 @@ def main():
 
     torch.save(unet.state_dict(), 'unet_model.pt')
 
+    show_outputs(unet, test_loader)
+
 #===============================================================================
 def load_data(files):
     '''Load radar data and split into 128x128 2d grid domains as multiple
@@ -87,6 +89,48 @@ def load_data(files):
     train_loader = utils.DataLoader(tensor, batch_size=1)
 
     return train_loader
+
+#===============================================================================
+def show_outputs(net, loader):
+    for b, data in enumerate(loader):
+        if ((b > 50) & (b < 100)):
+            data = data.type('torch.FloatTensor')
+            inputs, labels = data[:,:3], data[:,3]
+            #Wrap tensors in Variables
+            inputs, labels = Variable(inputs), Variable(labels)
+            #Forward pass
+            val_outputs = net(inputs)
+
+            #re-binarise output
+            val_outputs[np.where(val_outputs < 0.2)] = 0
+
+            #add to sequence of radar images
+            sequence = torch.cat((inputs, val_outputs), 1)
+
+            for step in range(12):
+                sequence = sequence.type('torch.FloatTensor')
+                #inputs, labels = sequence[:,-4:-1], sequence[:,-1]
+                inputs = sequence[:,-3:]
+                #Wrap tensors in Variables
+                inputs = Variable(inputs)
+                #Forward pass
+                val_outputs = net(inputs)
+                val_outputs[np.where(val_outputs < 0.2)] = 0
+
+                sequence = torch.cat((sequence, val_outputs), 1)
+
+            for i in range(12):
+                fig = plt.figure()
+                ax = fig.add_subplot(1,1,1)
+                #ax = fig.add_subplot(2, 6, i+1)
+                cf = plt.contourf(sequence[0,i].detach().numpy(), cmap=plt.cm.Greys)
+                ax.set_xticks(np.arange(0, 128, 10))
+                ax.set_yticks(np.arange(0, 128, 10))
+                plt.grid()
+                plt.setp(ax.xaxis.get_ticklabels(), visible=False)
+                plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                plt.savefig('plot_batch{}_im{}.png'.format(b, i))
+                plt.close()
 
 #===============================================================================
 def createLossAndOptimizer(net, learning_rate=0.01):
