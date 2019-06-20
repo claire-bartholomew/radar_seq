@@ -39,8 +39,8 @@ def main():
     test_loader = load_data(files3)
 
     unet = UNet()
-    val_loss, len_val_data = train_net(unet, train_loader, val_loader, batch_size=100,
-                                       n_epochs=10, learning_rate=0.01)
+    val_loss, len_val_data, optimizer = train_net(unet, train_loader, val_loader, batch_size=100,
+                                        n_epochs=10, learning_rate=0.01)
     # Print model's state_dict
     print("Model's state_dict:")
     for param_tensor in unet.state_dict():
@@ -239,7 +239,7 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
 
     print("Training finished, took {:.2f}s".format(time.time() - training_start_time))
 
-    return(total_val_loss, len(val_loader))
+    return(total_val_loss, len(val_loader), optimizer)
 
 #===============================================================================
 class double_conv(nn.Module):
