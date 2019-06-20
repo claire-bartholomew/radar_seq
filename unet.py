@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdb
 import time
-#
-#import torch
-#import torch.nn as nn
-#import torch.nn.functional as F
-#import torch.optim as optim
-#import torch.utils.data as utils
-#from torch.autograd import Variable
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import torch.utils.data as utils
+from torch.autograd import Variable
 
 #===============================================================================
 def main():
@@ -39,8 +39,8 @@ def main():
     test_loader = load_data(files3)
 
     unet = UNet()
-    val_loss, len_val_data = train_net(unet, train_loader, val_loader, batch_size=100,
-                                       n_epochs=10, learning_rate=0.01)
+    val_loss, len_val_data, optimizer = train_net(unet, train_loader, val_loader, batch_size=100,
+                                        n_epochs=10, learning_rate=0.01)
     # Print model's state_dict
     print("Model's state_dict:")
     for param_tensor in unet.state_dict():
@@ -66,8 +66,8 @@ def load_data(files):
     #pdb.set_trace()
     cube = cube[:, 500:1780, 200:1480]
     #cube = cube[:10*(cube.shape[0]//10), 1000:3560, 1000:2280]
-    cube_data = cube.data
-    print(np.shape(cube_data))
+    cube_data1 = cube.data
+    print(np.shape(cube_data1))
 
     # rotate and append data for data augmentation
     cube_data2 = cube_data1.copy()
@@ -77,7 +77,7 @@ def load_data(files):
         cube_data3[time] = np.rot90(cube_data2[time])
 
     cube_data = np.append(cube_data1, cube_data2, axis=0)
-    cube_data = np.append(aug_data, cube_data3, axis=0)
+    cube_data = np.append(cube_data, cube_data3, axis=0)
 
     split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4))
     print(np.shape(split_data_1))
@@ -239,7 +239,7 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
 
     print("Training finished, took {:.2f}s".format(time.time() - training_start_time))
 
-    return(total_val_loss, len(val_loader))
+    return(total_val_loss, len(val_loader), optimizer)
 
 #===============================================================================
 class double_conv(nn.Module):
