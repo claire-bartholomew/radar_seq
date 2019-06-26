@@ -13,12 +13,12 @@ from torch.autograd import Variable
 #===============================================================================
 def main():
 
-    files_t = [f'/nobackup/sccsb/radar/20180915{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_500m_UK' \
+    files_t = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                for m in range(0,60,5) for h in range(6,8)]
     train_loader = prep_data(files_t)
 
-    files = [f'/nobackup/sccsb/radar/20180923{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_500m_UK' \
-             for m in range(0,60,5) for h in range(6,8)]
+    files = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+             for m in range(0,60,5) for h in range(10,12)]
     val_loader = prep_data(files_v)
 
     unet = UNet(n_channels=3, n_classes=1)
