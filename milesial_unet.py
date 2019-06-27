@@ -165,7 +165,7 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
 
     print("Training finished, took {:.2f}s".format(time.time() - training_start_time))
 
-    torch.save(unet.state_dict(), 'milesial_unet_model.pt')
+    torch.save(net.state_dict(), 'milesial_unet_model.pt')
 
     return(total_val_loss, len(val_loader))
 
