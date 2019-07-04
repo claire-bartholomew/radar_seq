@@ -23,7 +23,7 @@ def main():
 
     unet = UNet(n_channels=3, n_classes=1)
     val_loss, len_val_data = train_net(unet, train_loader, val_loader,
-                                batch_size=100, n_epochs=15, learning_rate=0.01)
+                                batch_size=100, n_epochs=10, learning_rate=0.01)
 
 #===============================================================================
 def prep_data(files):
