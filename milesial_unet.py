@@ -1,3 +1,4 @@
+import argparse
 import iris
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +12,7 @@ import time
 from torch.autograd import Variable
 
 #===============================================================================
-def main():
+def main(nepochs, lr):
 
     files_t = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                for m in range(0,60,5) for h in range(6,9)]
@@ -22,8 +23,10 @@ def main():
     val_loader = prep_data(files_v)
 
     unet = UNet(n_channels=3, n_classes=1)
-    val_loss, len_val_data = train_net(unet, train_loader, val_loader,
-                                batch_size=100, n_epochs=10, learning_rate=0.01)
+
+    trained_net = train_net(unet, train_loader, val_loader,
+                            batch_size=100, n_epochs=nepochs, learning_rate=lr)
+    torch.save(trained_net.state_dict(), 'milesial_unet_{}ep_{}lr.pt'.format(str(nepochs), str(lr)))
 
 #===============================================================================
 def prep_data(files):
@@ -57,11 +60,17 @@ def prep_data(files):
     print(dataset.max())
     print(dataset.mean())
 
-    # Binarise data
-    dataset[np.where(dataset > 0)] = 1
+    # Put data in 'normal' range
+    dataset[np.where(dataset > 32)] = 32
     dataset[np.where(dataset <= 0)] = 0
     print(dataset.max())
     print(dataset.mean())
+
+    ## Binarise data
+    #dataset[np.where(dataset > 0)] = 1
+    #dataset[np.where(dataset <= 0)] = 0
+    #print(dataset.max())
+    #print(dataset.mean())
 
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
@@ -165,9 +174,9 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
 
     print("Training finished, took {:.2f}s".format(time.time() - training_start_time))
 
-    torch.save(net.state_dict(), 'milesial_unet_model.pt')
+    #torch.save(net.state_dict(), 'milesial_unet_model.pt')
 
-    return(total_val_loss, len(val_loader))
+    return(net) #total_val_loss, len(val_loader))
 
 #===============================================================================
 # full assembly of the sub-parts to form the complete net
@@ -279,4 +288,17 @@ class outconv(nn.Module):
 
 #===============================================================================
 if __name__ == "__main__":
-    main()
+    # Parse the arguments. The required arguments are the location of
+    # interest, the files containing the data to plot, the height
+    # at which the wind speed is required, and the map zoom.
+    parser = argparse.ArgumentParser(description='Run unet')
+    parser.add_argument('-e', type=int, required=True,
+                        help='the number of epochs')
+    parser.add_argument('-l', type=int, required=True,
+                        help='the learning rate')
+
+    args = parser.parse_args()
+    n_epochs = args.e
+    learningrate = args.l
+
+    main(n_epochs, learningrate)
