@@ -43,22 +43,28 @@ def prep_data(files):
 
     # Reshape data
     print(np.shape(cube_data))
-    split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4))
+    split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4)) #/16))
     print(np.shape(split_data_1))
     split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[1]/128, -2))
     split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[2]/128, -1))
     print(np.shape(split_data_1))
-    dataset = split_data_1.reshape(-1,4,128,128)
+    dataset = split_data_1.reshape(-1,4,128,128) #(-1,16,128,128)
     print(np.shape(dataset))
 
     print(dataset.max())
     print(dataset.mean())
 
-    # Binarise data
-    dataset[np.where(dataset > 0)] = 1
+    # Put data in 'normal' range
+    dataset[np.where(dataset > 32)] = 32
     dataset[np.where(dataset <= 0)] = 0
     print(dataset.max())
     print(dataset.mean())
+
+    # Binarise data
+    #dataset[np.where(dataset > 0)] = 1
+    #dataset[np.where(dataset <= 0)] = 0
+    #print(dataset.max())
+    #print(dataset.mean())
 
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
