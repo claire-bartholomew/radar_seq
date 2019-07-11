@@ -61,16 +61,16 @@ def prep_data(files):
     print(dataset.mean())
 
     # Put data in 'normal' range
-    dataset[np.where(dataset > 32)] = 32
-    dataset[np.where(dataset <= 0)] = 0
-    print(dataset.max())
-    print(dataset.mean())
-
-    ## Binarise data
-    #dataset[np.where(dataset > 0)] = 1
+    #dataset[np.where(dataset > 32)] = 32
     #dataset[np.where(dataset <= 0)] = 0
     #print(dataset.max())
     #print(dataset.mean())
+
+    # Binarise data
+    dataset[np.where(dataset > 0)] = 1
+    dataset[np.where(dataset <= 0)] = 0
+    print(dataset.max())
+    print(dataset.mean())
 
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
