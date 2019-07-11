@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import torch.utils.data as utils
 from torch.autograd import Variable
 import iris
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pdb
@@ -14,11 +16,11 @@ def main():
     #files_v = [f'/s3/mo-uki-radar-comp/20180915{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_500m_UK' \
     #           for m in range(0,60,5) for h in range(6,8)]
     files_v = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-                 for m in range(0,60,5) for h in range(10,13)]
+                 for m in range(0,60,5) for h in range(13,17)]
 
     val_loader = prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('milesial_unet_model.pt'))
+    model.load_state_dict(torch.load('milesial_unet_15ep_0.01lr.pt')) #milesial_unet_model.pt'))
     model.eval()
     show_outputs(model, val_loader)
 
@@ -34,21 +36,24 @@ def prep_data(files):
     # Data augmentation
     cube_data2 = cube_data1.copy()
     cube_data3 = cube_data1.copy()
+    cube_data4 = cube_data1.copy()
     for time in range(np.shape(cube_data1)[0]):
         cube_data2[time] = np.rot90(cube_data1[time])
         cube_data3[time] = np.rot90(cube_data2[time])
+        cube_data4[time] = np.rot90(cube_data3[time])
 
         cube_data = np.append(cube_data1, cube_data2, axis=0)
         cube_data = np.append(cube_data, cube_data3, axis=0)
+        cube_data = np.append(cube_data, cube_data4, axis=0)
 
     # Reshape data
     print(np.shape(cube_data))
-    split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4)) #/16))
+    split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/16))
     print(np.shape(split_data_1))
     split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[1]/128, -2))
     split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[2]/128, -1))
     print(np.shape(split_data_1))
-    dataset = split_data_1.reshape(-1,4,128,128) #(-1,16,128,128)
+    dataset = split_data_1.reshape(-1,16,128,128)
     print(np.shape(dataset))
 
     print(dataset.max())
@@ -185,10 +190,11 @@ def show_outputs(net, loader):
     count = 0
     for b, data in enumerate(loader):
         #if ((b > 50) & (b < 100)):
+        truth = data[:]
+        print(truth, np.shape(truth))
         data = data.type('torch.FloatTensor')
-        inputs = data[:,:3]
         #Wrap tensors in Variables
-        inputs = Variable(inputs)
+        inputs = Variable(data[:,:3])
         # Just test with data with enough rain
         if ((inputs.mean() > 0.001) & (count<100)):
 
@@ -202,9 +208,8 @@ def show_outputs(net, loader):
             #add to sequence of radar images
             sequence = torch.cat((inputs, val_outputs), 1)
 
-            for step in range(1, 12):
+            for step in range(1, 16):
                 sequence = sequence.type('torch.FloatTensor')
-                #inputs, labels = sequence[:,-4:-1], sequence[:,-1]
                 inputs = sequence[:,-3:]
                 #Wrap tensors in Variables
                 inputs = Variable(inputs)
@@ -214,10 +219,9 @@ def show_outputs(net, loader):
 
                 sequence = torch.cat((sequence, val_outputs), 1)
 
-            for i in range(12):
+            for i in range(16):
                 fig = plt.figure()
                 ax = fig.add_subplot(1,1,1)
-                #ax = fig.add_subplot(2, 6, i+1)
                 cf = plt.contourf(sequence[0,i].detach().numpy(), cmap=plt.cm.Greys)
                 ax.set_xticks(np.arange(0, 128, 10))
                 ax.set_yticks(np.arange(0, 128, 10))
@@ -225,7 +229,18 @@ def show_outputs(net, loader):
                 plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                 plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                 plt.tight_layout()
-                plt.savefig('plot_batch{}_im{}.png'.format(b, i))
+                plt.savefig('batch{}_im{}.png'.format(b, i))
+                plt.close('all')
+                fig = plt.figure()
+                ax = fig.add_subplot(1,1,1)
+                cf = plt.contourf(truth[0,i].detach().numpy(), cmap=plt.cm.Greys)
+                ax.set_xticks(np.arange(0, 128, 10))
+                ax.set_yticks(np.arange(0, 128, 10))
+                plt.grid()
+                plt.setp(ax.xaxis.get_ticklabels(), visible=False)
+                plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                plt.tight_layout()
+                plt.savefig('truth{}_im{}.png'.format(b, i))
                 plt.close()
 
         elif count >= 100:
