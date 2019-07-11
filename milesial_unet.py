@@ -13,7 +13,7 @@ from torch.autograd import Variable
 
 #===============================================================================
 def main(nepochs, lr):
-
+    print(nepochs, lr)
     files_t = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                for m in range(0,60,5) for h in range(6,9)]
     train_loader = prep_data(files_t)
@@ -294,7 +294,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run unet')
     parser.add_argument('-e', type=int, required=True,
                         help='the number of epochs')
-    parser.add_argument('-l', type=int, required=True,
+    parser.add_argument('-l', type=float, required=True,
                         help='the learning rate')
 
     args = parser.parse_args()
