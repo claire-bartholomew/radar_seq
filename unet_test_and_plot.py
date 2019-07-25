@@ -20,7 +20,7 @@ def main():
 
     val_loader = prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('milesial_unet_15ep_0.01lr.pt')) #milesial_unet_model.pt'))
+    model.load_state_dict(torch.load('milesial_unet_16ep_0.01lr.pt')) #milesial_unet_model.pt')) #15ep_0.01lr.pt')) #milesial_unet_model.pt'))
     model.eval()
     show_outputs(model, val_loader)
 
@@ -59,17 +59,17 @@ def prep_data(files):
     print(dataset.max())
     print(dataset.mean())
 
-    # Put data in 'normal' range
-    dataset[np.where(dataset > 32)] = 32
-    dataset[np.where(dataset <= 0)] = 0
-    print(dataset.max())
-    print(dataset.mean())
-
-    # Binarise data
-    #dataset[np.where(dataset > 0)] = 1
+    ## Put data in 'normal' range
+    #dataset[np.where(dataset > 32)] = 32
     #dataset[np.where(dataset <= 0)] = 0
     #print(dataset.max())
     #print(dataset.mean())
+
+    # Binarise data
+    dataset[np.where(dataset > 0)] = 1
+    dataset[np.where(dataset <= 0)] = 0
+    print(dataset.max())
+    print(dataset.mean())
 
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
@@ -203,7 +203,7 @@ def show_outputs(net, loader):
             val_outputs = net(inputs)
 
             #re-binarise output
-            #val_outputs[np.where(val_outputs < 0.2)] = 0
+            val_outputs[np.where(val_outputs < 0.2)] = 0
 
             #add to sequence of radar images
             sequence = torch.cat((inputs, val_outputs), 1)
