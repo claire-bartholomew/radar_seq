@@ -20,7 +20,7 @@ def main():
 
     val_loader = prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('old_milesial_unet_20ep_0.01lr.pt')) #milesial_unet_model.pt')) #15ep_0.01lr.pt')) #milesial_unet_model.pt'))
+    model.load_state_dict(torch.load('milesial_unet_15ep_0.01lr.pt')) #milesial_unet_model.pt')) #15ep_0.01lr.pt')) #milesial_unet_model.pt'))
     model.eval()
     show_outputs(model, val_loader)
 
@@ -230,7 +230,7 @@ def show_outputs(net, loader):
                 #plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                 plt.title('U-net timestep: {}'.format(i))
                 plt.tight_layout()
-                plt.savefig('batch{}_im{}.png'.format(b, i))
+                plt.savefig('/home/home01/sccsb/radar_seq/img/batch{}_im{}.png'.format(b, i))
                 plt.close('all')
                 fig = plt.figure()
                 ax = fig.add_subplot(1,1,1)
@@ -242,7 +242,7 @@ def show_outputs(net, loader):
                 #plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                 plt.title('Observed timestep: {}'.format(i))
                 plt.tight_layout()
-                plt.savefig('truth{}_im{}.png'.format(b, i))
+                plt.savefig('/home/home01/sccsb/radar_seq/img/truth{}_im{}.png'.format(b, i))
                 plt.close()
 
         elif count >= 100:
