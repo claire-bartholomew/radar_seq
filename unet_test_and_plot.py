@@ -20,7 +20,7 @@ def main():
 
     val_loader = prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('milesial_unet_15ep_0.01lr.pt')) #milesial_unet_model.pt')) #15ep_0.01lr.pt')) #milesial_unet_model.pt'))
+    model.load_state_dict(torch.load('milesial_unet_model.pt'))
     model.eval()
     show_outputs(model, val_loader)
 

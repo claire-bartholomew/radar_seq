@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdb
 
-import radar_seq.common as common
-import radar_seq.unet_model as model
+import common as common
+import unet_model as model
 
 #===============================================================================
 def main():
@@ -16,7 +16,7 @@ def main():
     files_v = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                  for m in range(0,60,5) for h in range(13,17)]
 
-    val_loader = prep_data(files_v)
+    val_loader = common.prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
     model.load_state_dict(torch.load('milesial_unet_model.pt'))
     model.eval()
