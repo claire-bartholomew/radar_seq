@@ -15,7 +15,7 @@ import iris.plot as iplt
 import pdb
 
 def animate():
-    filepath = '/scratch/cbarth/phd/img3/'
+    filepath = '/scratch/cbarth/phd/img6/'
 
     fig = plt.figure(figsize=(12,6))
     ax1 = plt.subplot(121)
@@ -25,7 +25,8 @@ def animate():
     myimages = []
 
     # loops through available pngs
-    for batch in range(130, 138):
+    for batch in range(33, 38):
+        print('batch = {}'.format(batch))
         for f in range(16):
 
             ## Read in picture

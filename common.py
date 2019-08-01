@@ -12,18 +12,17 @@ def prep_data(files):
     cube = cube[:, 500:1780, 200:1480]
     cube_data1 = cube.data
 
-    # Data augmentation
-    cube_data2 = cube_data1.copy()
-    cube_data3 = cube_data1.copy()
-    cube_data4 = cube_data1.copy()
-    for time in range(np.shape(cube_data1)[0]):
-        cube_data2[time] = np.rot90(cube_data1[time])
-        cube_data3[time] = np.rot90(cube_data2[time])
-        cube_data4[time] = np.rot90(cube_data3[time])
-
-        cube_data = np.append(cube_data1, cube_data2, axis=0)
-        cube_data = np.append(cube_data, cube_data3, axis=0)
-        cube_data = np.append(cube_data, cube_data4, axis=0)
+    ## Data augmentation
+    #cube_data2 = cube_data1.copy()
+    #cube_data3 = cube_data1.copy()
+    #cube_data4 = cube_data1.copy()
+    #for time in range(np.shape(cube_data1)[0]):
+    #    cube_data2[time] = np.rot90(cube_data1[time])
+    #    cube_data3[time] = np.rot90(cube_data2[time])
+    #    cube_data4[time] = np.rot90(cube_data3[time])
+    #    cube_data = np.append(cube_data1, cube_data2, axis=0)
+    #    cube_data = np.append(cube_data, cube_data3, axis=0)
+    #    cube_data = np.append(cube_data, cube_data4, axis=0)
 
     # Reshape data
     print(np.shape(cube_data))

@@ -15,11 +15,11 @@ from torch.autograd import Variable
 def main(nepochs, lr):
     print(nepochs, lr)
     files_t = [f'/nobackup/sccsb/radar/201807{d:02}{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for m in range(0,60,5) for h in range(6,9) for d in range(27,31)]
+               for m in range(0,60,5) for h in range(6,9) for d in range(27,30)]
     train_loader = prep_data(files_t)
 
     files_v = [f'/nobackup/sccsb/radar/201807{d:02}{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-             for m in range(0,60,5) for h in range(10,13) for d in range(27,31)]
+             for m in range(0,60,5) for h in range(10,13) for d in range(27,29)]
     val_loader = prep_data(files_v)
 
     unet = UNet(n_channels=3, n_classes=1)

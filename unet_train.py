@@ -11,8 +11,8 @@ import torch.optim as optim
 import time
 from torch.autograd import Variable
 
-import radar_seq.common as common
-import radar_seq.unet_model as model
+import common as common
+import unet_model as model
 
 #===============================================================================
 def main(nepochs, lr):
