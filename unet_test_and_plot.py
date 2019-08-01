@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdb
 
+import Decomposition_2017 as Decomposition 
+
 #===============================================================================
 def main():
 
@@ -186,6 +188,84 @@ class outconv(nn.Module):
         return x
 
 #===============================================================================
+def run_optical_flow(haic_t1, haic_t2, haic_t3):
+
+    print('Running optical flow method...')
+    # Determine velocity fields using optical flow method inputs: (inputfield1,
+    # inputfield2, timestepBetweenFields, Kernelwidth,
+    # BoxsizeOfBoxestoHaveSameVelocity, NumberOfIterations, smoothingmethod,
+    # pointweight)  ##inputfields are data arrays
+
+    #Determine optical flow class (calculates the advection velocity field between two 2D input fields)
+    myNewofc1 = Decomposition.OFC(haic_t1, haic_t2, kernel=7,
+                                  myboxsize=3, iterations=20, smethod=1,
+                                  pointweight=0.1)
+    myNewofc2 = Decomposition.OFC(haic_t2, haic_t3, kernel=7,
+                                  myboxsize=3, iterations=20, smethod=1,
+                                  pointweight=0.1)
+
+    #Calculate average velocity fields from the 2 timesteps
+    average_ofc_t0 = myNewofc2
+    average_ofc_t0.ucomp = (myNewofc1.ucomp + myNewofc2.ucomp)/2.
+    average_ofc_t0.vcomp = (myNewofc1.vcomp + myNewofc2.vcomp)/2.
+
+    #The calculated velocity components are stored in myNewofc.ucomp and myNewofc.vcomp
+    #Apply velocity field to inputfield2 using a backward in time scheme to
+    #minimize artefacts. A forward in time scheme can be used by setting the
+    #optional argument method=1.
+    advected_field_t0 = average_ofc_t0.movewholefield(haic_t3)
+
+    myNewofc3 = Decomposition.OFC(haic_t3, advected_field_t0, kernel=7,
+                                  myboxsize=3, iterations=20, smethod=1,
+                                  pointweight=0.1)
+
+    #Calculate average velocity fields from the 2 timesteps
+    average_ofc_t1 = myNewofc3
+    average_ofc_t1.ucomp = (myNewofc2.ucomp + myNewofc3.ucomp)/2.
+    average_ofc_t1.vcomp = (myNewofc2.vcomp + myNewofc3.vcomp)/2.
+
+    advected_field_t1 = average_ofc_t1.movewholefield(advected_field_t0)
+
+    myNewofc4 = Decomposition.OFC(advected_field_t0, advected_field_t1,
+                                  kernel=7, myboxsize=3, iterations=20,
+                                  smethod=1, pointweight=0.1)
+
+    #Calculate average velocity fields from the 2 timesteps
+    average_ofc_t2 = myNewofc4
+    average_ofc_t2.ucomp = (myNewofc3.ucomp + myNewofc4.ucomp)/2.
+    average_ofc_t2.vcomp = (myNewofc3.vcomp + myNewofc4.vcomp)/2.
+
+    advected_field_t2 = average_ofc_t2.movewholefield(advected_field_t1)
+
+    return advected_field_t0, advected_field_t1, advected_field_t2
+
+#===============================================================================
+def plot_optical_flow(inputs):
+    inputs = inputs.numpy()
+    sequence = []
+    t1 = inputs[0]
+    t2 = inputs[1]
+    t3 = inputs[2]
+    fcst1, fcst2, fcst3 = run_optical_flow(t1, t2, t3)
+    fcst4, fcst5, fcst6 = run_optical_flow(fcst1, fcst2, fcst3)
+    fcst7, fcst8, fcst9 = run_optical_flow(fcst4, fcst5, fcst6)
+    fcst10, fcst11, fcst12 = run_optical_flow(fcst7, fcst8, fcst9)
+    fcst13, fcst14, fcst15 = run_optical_flow(fcst10, fcst11, fcst12)
+
+    for im in [t1, t2, t3, fcst1, fcst2, fcst3, fcst4, fcst5, fcst6, fcst7, fcst8, fcst9, fcst10, fcst11, fcst12, fcst13, fcst14, fcst15]:
+        sequence.append(im)
+        #sequence = sequence[0]
+
+    for i in range(14):
+        print(sequence[i], np.shape(sequence[i]))
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1)
+        cf = plt.contourf(sequence[i], cmap=plt.cm.Greys)
+        plt.tight_layout()
+        plt.savefig('optical_flow{}_im{}.png'.format(b, i))
+        plt.close('all')
+
+#===============================================================================
 def show_outputs(net, loader):
     count = 0
     for b, data in enumerate(loader):
@@ -197,6 +277,9 @@ def show_outputs(net, loader):
         inputs = Variable(data[:,:3])
         # Just test with data with enough rain
         if ((inputs.mean() > 0.001) & (count<20)):
+
+            # Run data through optical flow methods
+            plot_optical_flow(inputs)
 
             count += 1
             #Forward pass
