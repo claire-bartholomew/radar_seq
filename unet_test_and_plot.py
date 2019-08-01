@@ -196,7 +196,7 @@ def show_outputs(net, loader):
         #Wrap tensors in Variables
         inputs = Variable(data[:,:3])
         # Just test with data with enough rain
-        if ((inputs.mean() > 0.001) & (count<100)):
+        if ((inputs.mean() > 0.001) & (count<20)):
 
             count += 1
             #Forward pass
