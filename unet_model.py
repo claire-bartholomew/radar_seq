@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data as utils
 from torch.autograd import Variable
+import torch.nn.functional as F
 
 #===============================================================================
 # full assembly of the sub-parts to form the complete net

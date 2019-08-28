@@ -240,8 +240,11 @@ def run_optical_flow(haic_t1, haic_t2, haic_t3):
     return advected_field_t0, advected_field_t1, advected_field_t2
 
 #===============================================================================
-def plot_optical_flow(inputs):
+def plot_optical_flow(inputs, b):
     inputs = inputs.numpy()
+    inputs = inputs[0]
+    print(inputs)
+    print(np.shape(inputs))
     sequence = []
     t1 = inputs[0]
     t2 = inputs[1]
@@ -261,6 +264,7 @@ def plot_optical_flow(inputs):
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
         cf = plt.contourf(sequence[i], cmap=plt.cm.Greys)
+        plt.title('Optical flow timestep: {}'.format(i))
         plt.tight_layout()
         plt.savefig('optical_flow{}_im{}.png'.format(b, i))
         plt.close('all')
@@ -279,7 +283,7 @@ def show_outputs(net, loader):
         if ((inputs.mean() > 0.001) & (count<20)):
 
             # Run data through optical flow methods
-            plot_optical_flow(inputs)
+            plot_optical_flow(inputs, b)
 
             count += 1
             #Forward pass

@@ -10,7 +10,8 @@ def prep_data(files):
     cube = cubes[0]/32
     # Select square area to concentrate on
     cube = cube[:, 500:1780, 200:1480]
-    cube_data1 = cube.data
+    #cube_data1 = cube.data
+    cube_data = cube.data
 
     ## Data augmentation
     #cube_data2 = cube_data1.copy()
