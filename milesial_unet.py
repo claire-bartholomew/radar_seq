@@ -32,6 +32,7 @@ def main(nepochs, lr):
 def prep_data(files):
     cubes = iris.load(files)
     cube = cubes[0]/32
+
     # Select square area to concentrate on
     cube = cube[:, 500:1780, 200:1480]
     #cube = cube[:10*(cube.shape[0]//10), 1000:2280, 1000:2280]

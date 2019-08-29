@@ -26,7 +26,7 @@ def main(nepochs, lr):
 
     trained_net = train_net(unet, train_loader, val_loader,
                             batch_size=100, n_epochs=nepochs, learning_rate=lr)
-    torch.save(trained_net.state_dict(), 'milesial_unet_{}ep_{}lr.pt'.format(str(nepochs), str(lr)))
+    torch.save(trained_net.state_dict(), 'milesial_unet_uk_{}ep_{}lr.pt'.format(str(nepochs), str(lr)))
 
 #===============================================================================
 def prep_data(files):
@@ -124,16 +124,11 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
         running_loss = 0.0
         print_every = n_batches // 10
         total_train_loss = 0
-
-        inputs = []
+     
         for i, data in enumerate(train_loader, 0):
-
-            inputs.append(data[0])
 
             #Get inputs from training data
             inputs, labels = data[:,:3], data[:,3]
-
-            pdb.set_trace()
 
             #Wrap them in a Variable object
             inputs, labels = Variable(inputs), Variable(labels)

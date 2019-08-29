@@ -21,11 +21,11 @@ def main(nepochs, lr):
 
     files_t = [f'/nobackup/sccsb/radar/201807{d:02}{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                for m in range(0,60,5) for h in range(6,9) for d in range(27,31)]
-    train_loader = common.prep_data(files_t)
+    train_loader = common.prep_data_uk(files_t)
 
     files_v = [f'/nobackup/sccsb/radar/201807{d:02}{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
              for m in range(0,60,5) for h in range(10,13) for d in range(27,31)]
-    val_loader = common.prep_data(files_v)
+    val_loader = common.prep_data_uk(files_v)
 
     unet = model.UNet(n_channels=3, n_classes=1)
 

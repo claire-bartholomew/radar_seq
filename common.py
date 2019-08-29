@@ -4,26 +4,41 @@ import torch
 import torch.nn as nn
 import torch.utils.data as utils
 
+def prep_data_uk(files):
+    cubes = iris.load(files)
+    cube = cubes[0]/32
+    dataset = cube.data
 
-def prep_data(files):
+    print(np.shape(dataset))
+    dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
+    print(np.shape(dataset))
+
+    # Convert to torch tensors
+    tensor = torch.stack([torch.Tensor(i) for i in dataset])
+    loader = utils.DataLoader(tensor, batch_size=1)
+
+    return loader
+
+def prep_data(files, augment=False):
     cubes = iris.load(files)
     cube = cubes[0]/32
     # Select square area to concentrate on
     cube = cube[:, 500:1780, 200:1480]
-    #cube_data1 = cube.data
     cube_data = cube.data
 
-    ## Data augmentation
-    #cube_data2 = cube_data1.copy()
-    #cube_data3 = cube_data1.copy()
-    #cube_data4 = cube_data1.copy()
-    #for time in range(np.shape(cube_data1)[0]):
-    #    cube_data2[time] = np.rot90(cube_data1[time])
-    #    cube_data3[time] = np.rot90(cube_data2[time])
-    #    cube_data4[time] = np.rot90(cube_data3[time])
-    #    cube_data = np.append(cube_data1, cube_data2, axis=0)
-    #    cube_data = np.append(cube_data, cube_data3, axis=0)
-    #    cube_data = np.append(cube_data, cube_data4, axis=0)
+    # Data augmentation
+    if augment == True:
+        cube_data1 = cube.data
+        cube_data2 = cube_data1.copy()
+        cube_data3 = cube_data1.copy()
+        cube_data4 = cube_data1.copy()
+        for time in range(np.shape(cube_data1)[0]):
+            cube_data2[time] = np.rot90(cube_data1[time])
+            cube_data3[time] = np.rot90(cube_data2[time])
+            cube_data4[time] = np.rot90(cube_data3[time])
+            cube_data = np.append(cube_data1, cube_data2, axis=0)
+            cube_data = np.append(cube_data, cube_data3, axis=0)
+            cube_data = np.append(cube_data, cube_data4, axis=0)
 
     # Reshape data
     print(np.shape(cube_data))
