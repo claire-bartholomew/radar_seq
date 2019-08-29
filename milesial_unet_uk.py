@@ -33,6 +33,11 @@ def prep_data(files):
     cubes = iris.load(files)
     cube = cubes[0]/32
 
+    dataset = cube.data
+    print(np.shape(dataset))
+    dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
+    print(np.shape(dataset))
+
     ## Select square area to concentrate on
     #cube = cube[:, 500:1780, 200:1480]
     ##cube = cube[:10*(cube.shape[0]//10), 1000:2280, 1000:2280]
@@ -73,8 +78,6 @@ def prep_data(files):
     #print(dataset.max())
     #print(dataset.mean())
 
-    dataset = cube.data
-    
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
     loader = utils.DataLoader(tensor, batch_size=1)
@@ -122,10 +125,15 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
         print_every = n_batches // 10
         total_train_loss = 0
 
+        inputs = []
         for i, data in enumerate(train_loader, 0):
+
+            inputs.append(data[0])
 
             #Get inputs from training data
             inputs, labels = data[:,:3], data[:,3]
+
+            pdb.set_trace()
 
             #Wrap them in a Variable object
             inputs, labels = Variable(inputs), Variable(labels)
