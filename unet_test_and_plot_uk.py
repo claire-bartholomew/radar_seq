@@ -18,7 +18,7 @@ def main():
     #files_v = [f'/s3/mo-uki-radar-comp/20180915{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_500m_UK' \
     #           for m in range(0,60,5) for h in range(6,8)]
     files_v = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-                 for m in range(0,60,5) for h in range(13,17)]
+                 for m in range(0,60,5) for h in range(13,14)]
 
     val_loader = prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
@@ -102,11 +102,14 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
+        print('down4 finished')
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
+        print('up4 finished')
         x = self.outc(x)
+        print('outc finished')
         return torch.sigmoid(x)
 
 #===============================================================================
@@ -165,6 +168,7 @@ class up(nn.Module):
         x1 = self.up(x1)
 
         # input is CHW
+        print(x2.size(), x1.size())
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
 
@@ -182,10 +186,14 @@ class up(nn.Module):
 class outconv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(outconv, self).__init__()
+        print('channels {} {}'.format(in_ch, out_ch))
         self.conv = nn.Conv2d(in_ch, out_ch, 1)
 
     def forward(self, x):
+        print('outconv forward')
+        print(x)
         x = self.conv(x)
+        print('outconv finished')
         return x
 
 #===============================================================================
@@ -299,12 +307,14 @@ def show_outputs(net, loader):
             for step in range(1, 16):
                 print('step: {}'.format(step))
                 sequence = sequence.type('torch.FloatTensor')
-                inputs = sequence[:,-3:]
+                inputs2 = sequence[:,-3:]
                 #Wrap tensors in Variables
-                inputs = Variable(inputs)
+                inputs3 = Variable(inputs2)
                 #Forward pass
                 print('forward pass')
-                val_outputs = net(inputs)
+                print(inputs3.mean())
+                #import gc; gc.collect()
+                val_outputs = net(inputs3)
                 val_outputs[np.where(val_outputs < 0.2)] = 0
                 print('ouputs calculated')
                 sequence = torch.cat((sequence, val_outputs), 1)
