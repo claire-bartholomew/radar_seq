@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdb
 
-import Decomposition_2017 as Decomposition 
+import Decomposition_2017 as Decomposition
 
 #===============================================================================
 def main():
@@ -296,18 +296,22 @@ def show_outputs(net, loader):
             #add to sequence of radar images
             sequence = torch.cat((inputs, val_outputs), 1)
 
-            for step in range(1, 16):
-                print('step: {}'.format(step))
-                sequence = sequence.type('torch.FloatTensor')
-                inputs = sequence[:,-3:]
-                #Wrap tensors in Variables
-                inputs = Variable(inputs)
-                #Forward pass
-                print('forward pass')
-                val_outputs = net(inputs)
-                val_outputs[np.where(val_outputs < 0.2)] = 0
-                print('ouputs calculated')
-                sequence = torch.cat((sequence, val_outputs), 1)
+            for step in range(10):
+                print('step = {}'.format(step))
+                sequence = predict_1hr(sequence)
+
+            #for step in range(1, 16):
+            #    print('step: {}'.format(step))
+            #    sequence = sequence.type('torch.FloatTensor')
+            #    inputs = sequence[:,-3:]
+            #    #Wrap tensors in Variables
+            #    inputs = Variable(inputs)
+            #    #Forward pass
+            #    print('forward pass')
+            #    val_outputs = net(inputs)
+            #    val_outputs[np.where(val_outputs < 0.2)] = 0
+            #    print('ouputs calculated')
+            #    sequence = torch.cat((sequence, val_outputs), 1)
 
             for i in range(16):
                 print('start figure')
@@ -338,6 +342,21 @@ def show_outputs(net, loader):
 
         elif count >= 100:
             break
+
+#===============================================================================
+def predict_1hr(sequence):
+    sequence = sequence.type('torch.FloatTensor')
+    inputs = sequence[:,-3:]
+    #Wrap tensors in Variables
+    inputs = Variable(inputs)
+    #Forward pass
+    print('forward pass')
+    val_outputs = net(inputs)
+    val_outputs[np.where(val_outputs < 0.2)] = 0
+    print('ouputs calculated')
+    sequence = torch.cat((sequence, val_outputs), 1)
+
+    return sequence
 #===============================================================================
 if __name__ == "__main__":
     main()
