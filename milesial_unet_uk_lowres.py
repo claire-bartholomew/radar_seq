@@ -33,13 +33,30 @@ def prep_data(files):
     cubes = iris.load(files)
     cube = cubes[0]/32
 
-    dataset = cube.data
+    #dataset = cube.data
+    #print(np.shape(dataset))
+    #dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
+    #print(np.shape(dataset))
+
+    ## Select square area to concentrate on
+    #cube = cube[:, 900:1700, 700:1500]
+
+    #sample_points = [('projection_y_coordinate', np.linspace(275500., 1074500., 200)),
+    #                 ('projection_x_coordinate', np.linspace(295500., 1094500., 200))]
+
+    sample_points = [('projection_y_coordinate', np.linspace(-624500., 1546500., 543)),
+                     ('projection_x_coordinate', np.linspace(-404500., 1318500., 431))]
+
+    cube1 = cube.interpolate(sample_points, iris.analysis.Linear())
+
+    dataset = cube1.data
     print(np.shape(dataset))
     dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
     print(np.shape(dataset))
+ 
+    pdb.set_trace()
 
-    ## Select square area to concentrate on
-    cube = cube[:, 900:1700, 700:1500]
+
     ##cube = cube[:10*(cube.shape[0]//10), 1000:2280, 1000:2280]
     #cube_data1 = cube.data
 
