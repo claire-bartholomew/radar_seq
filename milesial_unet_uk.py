@@ -39,7 +39,7 @@ def prep_data(files):
     print(np.shape(dataset))
 
     ## Select square area to concentrate on
-    #cube = cube[:, 500:1780, 200:1480]
+    cube = cube[:, 900:1700, 700:1500]
     ##cube = cube[:10*(cube.shape[0]//10), 1000:2280, 1000:2280]
     #cube_data1 = cube.data
 

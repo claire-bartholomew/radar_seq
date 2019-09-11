@@ -39,7 +39,7 @@ def show_outputs(net, loader):
             val_outputs = net(inputs)
 
             #re-binarise output
-            val_outputs[np.where(val_outputs < 0.2)] = 0
+            #val_outputs[np.where(val_outputs < 0.2)] = 0
 
             #add to sequence of radar images
             sequence = torch.cat((inputs, val_outputs), 1)

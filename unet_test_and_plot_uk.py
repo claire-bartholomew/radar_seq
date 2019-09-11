@@ -18,11 +18,11 @@ def main():
     #files_v = [f'/s3/mo-uki-radar-comp/20180915{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_500m_UK' \
     #           for m in range(0,60,5) for h in range(6,8)]
     files_v = [f'/nobackup/sccsb/radar/20180727{h:02}{m:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-                 for m in range(0,60,5) for h in range(13,14)]
+                 for m in range(0,60,5) for h in range(13,17)]
 
     val_loader = prep_data(files_v)
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('milesial_unet_uk_15ep_0.01lr.pt'))
+    model.load_state_dict(torch.load('milesial_unet_uk_16ep_0.01lr.pt'))
     model.eval()
     show_outputs(model, val_loader)
 
@@ -30,49 +30,12 @@ def main():
 def prep_data(files):
     cubes = iris.load(files)
     cube = cubes[0]/32
-    ## Select square area to concentrate on
-    #cube = cube[:, 500:1780, 200:1480]
-    #cube = cube[:10*(cube.shape[0]//10), 1000:2280, 1000:2280]
+
     dataset = cube.data
-    dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
-
-    ## Data augmentation
-    #cube_data2 = cube_data1.copy()
-    #cube_data3 = cube_data1.copy()
-    #cube_data4 = cube_data1.copy()
-    #for time in range(np.shape(cube_data1)[0]):
-    #    cube_data2[time] = np.rot90(cube_data1[time])
-    #    cube_data3[time] = np.rot90(cube_data2[time])
-    #    cube_data4[time] = np.rot90(cube_data3[time])
-
-    #    cube_data = np.append(cube_data1, cube_data2, axis=0)
-    #    cube_data = np.append(cube_data, cube_data3, axis=0)
-    #    cube_data = np.append(cube_data, cube_data4, axis=0)
-
-    # Reshape data
-    #print(np.shape(cube_data))
-    #split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/16))
-    #print(np.shape(split_data_1))
-    #split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[1]/128, -2))
-    #split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[2]/128, -1))
-    #print(np.shape(split_data_1))
-    #dataset = split_data_1.reshape(-1,16,128,128)
-    #print(np.shape(dataset))
-
-    #print(dataset.max())
-    #print(dataset.mean())
-
-    ## Put data in 'normal' range
-    #dataset[np.where(dataset > 32)] = 32
-    #dataset[np.where(dataset <= 0)] = 0
-    #print(dataset.max())
-    #print(dataset.mean())
-
-    # Binarise data
-    #dataset[np.where(dataset > 0)] = 1
-    #dataset[np.where(dataset <= 0)] = 0
-    #print(dataset.max())
-    #print(dataset.mean())
+    dataset = np.stack(np.split(dataset, dataset.shape[0]/16))
+    print(np.shape(dataset))
+    dataset = dataset[:,:,900:1700,700:1500]
+    print(np.shape(dataset))
 
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
@@ -102,14 +65,11 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
-        print('down4 finished')
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
-        print('up4 finished')
         x = self.outc(x)
-        print('outc finished')
         return torch.sigmoid(x)
 
 #===============================================================================
@@ -186,12 +146,9 @@ class up(nn.Module):
 class outconv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(outconv, self).__init__()
-        print('channels {} {}'.format(in_ch, out_ch))
         self.conv = nn.Conv2d(in_ch, out_ch, 1)
 
     def forward(self, x):
-        print('outconv forward')
-        print(x)
         x = self.conv(x)
         print('outconv finished')
         return x
@@ -299,27 +256,14 @@ def show_outputs(net, loader):
             val_outputs = net(inputs)
 
             #re-binarise output
-            val_outputs[np.where(val_outputs < 0.2)] = 0
+            #val_outputs[np.where(val_outputs < 0.2)] = 0
 
             #add to sequence of radar images
             sequence = torch.cat((inputs, val_outputs), 1)
 
-            for step in range(10):
+            for step in range(12):
                 print('step = {}'.format(step))
-                sequence = predict_1hr(sequence)
-
-            #for step in range(1, 16):
-            #    print('step: {}'.format(step))
-            #    sequence = sequence.type('torch.FloatTensor')
-            #    inputs = sequence[:,-3:]
-            #    #Wrap tensors in Variables
-            #    inputs = Variable(inputs)
-            #    #Forward pass
-            #    print('forward pass')
-            #    val_outputs = net(inputs)
-            #    val_outputs[np.where(val_outputs < 0.2)] = 0
-            #    print('ouputs calculated')
-            #    sequence = torch.cat((sequence, val_outputs), 1)
+                sequence = predict_1hr(sequence, net)
 
             for i in range(16):
                 print('start figure')
@@ -352,7 +296,7 @@ def show_outputs(net, loader):
             break
 
 #===============================================================================
-def predict_1hr(sequence):
+def predict_1hr(sequence, net):
     sequence = sequence.type('torch.FloatTensor')
     inputs = sequence[:,-3:]
     #Wrap tensors in Variables
@@ -360,7 +304,7 @@ def predict_1hr(sequence):
     #Forward pass
     print('forward pass')
     val_outputs = net(inputs)
-    val_outputs[np.where(val_outputs < 0.2)] = 0
+    #val_outputs[np.where(val_outputs < 0.2)] = 0
     print('ouputs calculated')
     sequence = torch.cat((sequence, val_outputs), 1)
 
