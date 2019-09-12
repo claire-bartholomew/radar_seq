@@ -53,48 +53,8 @@ def prep_data(files):
     print(np.shape(dataset))
     dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
     print(np.shape(dataset))
- 
-    pdb.set_trace()
-
-
-    ##cube = cube[:10*(cube.shape[0]//10), 1000:2280, 1000:2280]
-    #cube_data1 = cube.data
-
-    ## Data augmentation
-    #cube_data2 = cube_data1.copy()
-    #cube_data3 = cube_data1.copy()
-    #for time in range(np.shape(cube_data1)[0]):
-    #    cube_data2[time] = np.rot90(cube_data1[time])
-    #    cube_data3[time] = np.rot90(cube_data2[time])
-
-    #    cube_data = np.append(cube_data1, cube_data2, axis=0)
-    #    cube_data = np.append(cube_data, cube_data3, axis=0)
-
-    ## Reshape data into smaller areas (128x128) with 4 consecutive timesteps
-    #print(np.shape(cube_data))
-    #split_data_1 = np.stack(np.split(cube_data, cube_data.shape[0]/4))
-    #print(np.shape(split_data_1))
-    #split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[1]/128, -2))
-    #split_data_1 = np.stack(np.split(split_data_1, cube_data.shape[2]/128, -1))
-    #print(np.shape(split_data_1))
-    #dataset = split_data_1.reshape(-1,4,128,128)
-    #print(np.shape(dataset))
-
-    #print(dataset.max())
-    #print(dataset.mean())
-
-    ## Put data in 'normal' range
-    ##dataset[np.where(dataset > 32)] = 32
-    ##dataset[np.where(dataset <= 0)] = 0
-    ##print(dataset.max())
-    ##print(dataset.mean())
-
-    ## Binarise data
-    #dataset[np.where(dataset > 0)] = 1
-    #dataset[np.where(dataset <= 0)] = 0
-    #print(dataset.max())
-    #print(dataset.mean())
-
+    dataset[np.where(dataset>32)] = 32. 
+  
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
     loader = utils.DataLoader(tensor, batch_size=1)
@@ -228,7 +188,7 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         x = self.outc(x)
-        return torch.sigmoid(x)
+        return x #torch.sigmoid(x)
 
 #===============================================================================
 # sub-parts of the U-Net model
