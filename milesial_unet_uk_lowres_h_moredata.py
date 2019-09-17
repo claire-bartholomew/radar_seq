@@ -2,6 +2,7 @@ import argparse
 import iris
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pdb
 import torch
 import torch.nn as nn
@@ -14,13 +15,22 @@ from torch.autograd import Variable
 #===============================================================================
 def main(nepochs, lr):
     print(nepochs, lr)
+    # List all possible radar files in range and find those that exist
     files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for mi in range(0,60,5) for h in range(24) for d in range(25) for mo in range(5,8)]
-    train_loader = prep_data(files_t)
+               for mi in range(0,60,5) for h in range(24) for d in range(5) for mo in range(5,6)] #8)]
+    list_train = []
+    for file in files_t:
+        if os.path.isfile(file):
+            list_train.append(file)
+    train_loader = prep_data(list_train)
 
-    files_v = [f'/nobackup/sccsb/radar/201807{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for mi in range(0,60,5) for h in range(24) for d in range(25,28) for mo in range(5,8)]
-    val_loader = prep_data(files_v)
+    files_v = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+               for mi in range(0,60,5) for h in range(24) for d in range(25,28) for mo in range(5,6)] #8)]
+    list_val = []
+    for file in files_v:
+        if os.path.isfile(file):
+            list_val.append(file)
+    val_loader = prep_data(list_val)
 
     unet = UNet(n_channels=3, n_classes=1)
 
@@ -31,6 +41,7 @@ def main(nepochs, lr):
 #===============================================================================
 def prep_data(files):
     cubes = iris.load(files)
+    print('loaded cubes')
     cube = cubes[0]/32
 
     # Regrid to a resolution x4 lower
