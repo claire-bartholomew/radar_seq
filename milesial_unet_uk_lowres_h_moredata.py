@@ -11,13 +11,15 @@ import torch.utils.data as utils
 import torch.optim as optim
 import time
 from torch.autograd import Variable
+import datetime
+import re
 
 #===============================================================================
 def main(nepochs, lr):
     print(nepochs, lr)
     # List all possible radar files in range and find those that exist
     files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for mi in range(0,60,5) for h in range(24) for d in range(5) for mo in range(5,6)] #8)]
+               for mi in range(0,60,5) for h in range(24) for d in range(25) for mo in range(5,6)]
     list_train = []
     for file in files_t:
         if os.path.isfile(file):
@@ -25,7 +27,7 @@ def main(nepochs, lr):
     train_loader = prep_data(list_train)
 
     files_v = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for mi in range(0,60,5) for h in range(24) for d in range(25,28) for mo in range(5,6)] #8)]
+               for mi in range(0,60,5) for h in range(24) for d in range(25,28) for mo in range(5,6)]
     list_val = []
     for file in files_v:
         if os.path.isfile(file):
@@ -39,33 +41,63 @@ def main(nepochs, lr):
     torch.save(trained_net.state_dict(), 'milesial_unet_uk_{}ep_{}lr_h2.pt'.format(str(nepochs), str(lr)))
 
 #===============================================================================
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+#=============================================================================
 def prep_data(files):
-    cubes = iris.load(files)
-    print('loaded cubes')
-    cube = cubes[0]/32
 
     # Regrid to a resolution x4 lower
     sample_points = [('projection_y_coordinate', np.linspace(-624500., 1546500., 543)),
                      ('projection_x_coordinate', np.linspace(-404500., 1318500., 431))]
-    cube1 = cube.interpolate(sample_points, iris.analysis.Linear())
 
-    # Separate into groups of 4 time steps
-    dataset = cube1.data
-    print(np.shape(dataset))
-    dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
-    print(np.shape(dataset))
+    timeformat = "%Y%m%d%H%M" # this is how your timestamp looks like
+    regex = re.compile("^/nobackup/sccsb/radar/(\d*)")
 
-    # Set limit of large values # or to missing? - have asked Tim Darlington about these large values
-    dataset[np.where(dataset < 0)] = 0.
-    dataset[np.where(dataset > 32)] = 32. #-1./32 
+    def gettimestamp(thestring):
+        m = regex.search(thestring)
+        return datetime.datetime.strptime(m.groups()[0], timeformat)
 
-    # Normalise data
-    dataset = dataset/32.
+    # sort files by datetime
+    sorted_files = sorted(files, key=gettimestamp)
 
-    # Binarise data 
-    #dataset[np.where(dataset < 0)] = 0.
-    #dataset[np.where(dataset > 0)] = 1.
+    # only keep filenames where 4 consecutive files exist at 5 min intervals
+    sorted_files = list(chunks(sorted_files, 4))
+    for group in sorted_files:
+        if len(group) < 4:
+            sorted_files.remove(group)
+        else:
+            t0 = group[0].find('2018')
+            dt1 = datetime.datetime.strptime(group[0][t0:t0+12], '%Y%m%d%H%M')
+            t3 = group[3].find('2018')
+            dt2 = datetime.datetime.strptime(group[3][t3:t3+12], '%Y%m%d%H%M')
+            if (dt2-dt1 != datetime.timedelta(minutes=15)):
+                print(dt2-dt1, 'remove files')
+                sorted_files.remove(group)
 
+    dataset = []
+    for fn in sorted_files:
+        print(fn)
+        cube = iris.load_cube(fn)
+        cube = cube / 32.
+        cube1 = cube.interpolate(sample_points, iris.analysis.Linear())
+        data = cube1.data
+
+        # Set limit of large values # or to missing? - have asked Tim Darlington about these large values
+        data[np.where(data < 0)] = 0.
+        data[np.where(data > 32)] = 32. #-1./32 
+
+        # Normalise data
+        data = data / 32.
+
+        # Binarise data 
+        #dataset[np.where(dataset < 0)] = 0.
+        #dataset[np.where(dataset > 0)] = 1.
+
+        dataset.append(data)
+ 
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
     loader = utils.DataLoader(tensor, batch_size=1)
