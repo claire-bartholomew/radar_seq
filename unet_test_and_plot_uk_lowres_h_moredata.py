@@ -7,6 +7,7 @@ import iris
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import iris.plot as iplt
 import numpy as np
 import pdb
 import os
@@ -19,17 +20,17 @@ import Decomposition_2017 as Decomposition
 def main():
 
     files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-                 for mi in range(0,60,5) for h in range(10,19) for d in range(24,25) for mo in range(7,8)]
+                 for mi in range(0,60,5) for h in range(10,19) for d in range(28,30) for mo in range(7,8)]
     list_test = []
     for file in files_t:
         if os.path.isfile(file):
             list_test.append(file)
-    test_loader = prep_data(list_test)
+    test_loader, cube = prep_data(list_test)
 
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('milesial_unet_uk_15ep_0.01lr_h2.pt'))
+    model.load_state_dict(torch.load('milesial_unet_uk_15ep_0.01lr_h.pt'))
     model.eval()
-    show_outputs(model, test_loader)
+    show_outputs(model, test_loader, cube)
 
 #===============================================================================
 def chunks(l, n):
@@ -93,7 +94,7 @@ def prep_data(files):
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
     loader = utils.DataLoader(tensor, batch_size=1)
 
-    return loader
+    return loader, cube1
 
 #===============================================================================
 # full assembly of the sub-parts to form the complete net
@@ -206,8 +207,9 @@ class outconv(nn.Module):
         return x
 
 #===============================================================================
-def show_outputs(net, loader):
+def show_outputs(net, loader, cube):
     count = 0
+    cube = cube[0] # Select just one timestep of cube
     for b, data in enumerate(loader):
         #if ((b > 50) & (b < 100)):
         truth = data[:]
@@ -223,6 +225,7 @@ def show_outputs(net, loader):
 
         # Normalise data
         val_outputs = val_outputs / val_outputs.max()
+        print(val_outputs.max())
 
         val_outputs[np.where(val_outputs < 0.)] = 0.
         #val_outputs[np.where(val_outputs > 32.)] = 32.
@@ -238,8 +241,10 @@ def show_outputs(net, loader):
             print('start figure')
             fig = plt.figure()
             ax = fig.add_subplot(1,1,1)
-            cf = plt.contourf(sequence[0,i].detach().numpy(), cmap=plt.cm.Greys, vmin=0, vmax=1) #32)
-            cbar = plt.colorbar() #cf)
+            cube.data = sequence[0,i].detach().numpy()
+            cf = iplt.contourf(cube, cmap=plt.cm.viridis, vmin=0, vmax=1) #32)
+            #cbar = plt.colorbar() #cf)
+            plt.gca().coastlines('50m')
             #ax.set_xticks(np.arange(0, 128, 10))
             #ax.set_yticks(np.arange(0, 128, 10))
             #plt.grid()
@@ -247,12 +252,14 @@ def show_outputs(net, loader):
             #plt.setp(ax.yaxis.get_ticklabels(), visible=False)
             plt.title('U-net timestep: {}'.format(i))
             plt.tight_layout()
-            plt.savefig('/home/home01/sccsb/radar_seq/img/batch{}_im{}.png'.format(b, i))
+            plt.savefig('/home/home01/sccsb/radar_seq/img3/batch{}_im{}.png'.format(b, i))
             plt.close('all')
             fig = plt.figure()
             ax = fig.add_subplot(1,1,1)
-            cf = plt.contourf(truth[0,i].detach().numpy(), cmap=plt.cm.Greys, vmin=0, vmax=1) #32)
-            cbar = plt.colorbar() #cf)
+            cube.data = truth[0,i].detach().numpy()
+            cf = iplt.contourf(cube, cmap=plt.cm.viridis, vmin=0, vmax=1) #32)
+            #cbar = plt.colorbar() #cf)
+            plt.gca().coastlines('50m')
             #ax.set_xticks(np.arange(0, 128, 10))
             #ax.set_yticks(np.arange(0, 128, 10))
             #plt.grid()
@@ -260,7 +267,7 @@ def show_outputs(net, loader):
             #plt.setp(ax.yaxis.get_ticklabels(), visible=False)
             plt.title('Observed timestep: {}'.format(i))
             plt.tight_layout()
-            plt.savefig('/home/home01/sccsb/radar_seq/img/truth{}_im{}.png'.format(b, i))
+            plt.savefig('/home/home01/sccsb/radar_seq/img3/truth{}_im{}.png'.format(b, i))
             plt.close()
 
         #elif count >= 100:
@@ -277,7 +284,7 @@ def predict_1hr(sequence, net):
     val_outputs = net(inputs)
     # Normalise data
     val_outputs = val_outputs / val_outputs.max()
-
+    print(val_outputs.max())
     #val_outputs[np.where(val_outputs > 32.)] = 32.
     val_outputs[np.where(val_outputs < 0.)] = 0.
     print('ouputs calculated')
