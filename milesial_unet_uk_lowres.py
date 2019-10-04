@@ -26,7 +26,7 @@ def main(nepochs, lr):
 
     trained_net = train_net(unet, train_loader, val_loader,
                             batch_size=100, n_epochs=nepochs, learning_rate=lr)
-    torch.save(trained_net.state_dict(), 'milesial_unet_uk_{}ep_{}lr.pt'.format(str(nepochs), str(lr)))
+    torch.save(trained_net.state_dict(), 'milesial_unet_uk_{}ep_{}lr_e.pt'.format(str(nepochs), str(lr)))
 
 #===============================================================================
 def prep_data(files):
@@ -53,8 +53,14 @@ def prep_data(files):
     print(np.shape(dataset))
     dataset = np.stack(np.split(dataset, dataset.shape[0]/4))
     print(np.shape(dataset))
-    dataset[np.where(dataset>32)] = 32. 
-  
+
+    # Set large values to missing? (or 32?)
+    dataset[np.where(dataset > 32)] = 32. #-1./32 #32.
+
+    # Binarise data 
+    #dataset[np.where(dataset < 0)] = 0.
+    #dataset[np.where(dataset > 0)] = 1.
+
     # Convert to torch tensors
     tensor = torch.stack([torch.Tensor(i) for i in dataset])
     loader = utils.DataLoader(tensor, batch_size=1)
@@ -112,6 +118,10 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
 
             # Run the forward pass https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/
             outputs = net(inputs)
+
+            print('inputs = {}'.format(inputs.max()))
+            print('outputs = {}'.format(outputs.max()))
+
             loss_size = loss(outputs[0], labels)
             loss_list.append(loss_size.item())
 
