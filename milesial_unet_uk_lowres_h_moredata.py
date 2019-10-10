@@ -19,7 +19,7 @@ def main(nepochs, lr):
     print(nepochs, lr)
 
     # List all possible radar files in range and find those that exist
-    files_t = [f'/nobackup/sccsb/radar/2018{mmdd:04}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+    files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                for mi in range(0,60,5) for h in range(24) for d in range(25) for mo in range(5,6)]
     list_train = []
     for file in files_t:
