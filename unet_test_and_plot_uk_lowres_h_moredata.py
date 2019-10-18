@@ -19,16 +19,22 @@ import Decomposition_2017 as Decomposition
 #===============================================================================
 def main():
 
-    files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-                 for mi in range(0,60,5) for h in range(10,19) for d in range(28,30) for mo in range(7,8)]
+    rainy_dates = ['1127','1109'] # '1108', '1109', '1110', '1112', '1113','1120', '1127', '1128', '1129', '1130','1202', '1204', '1205', '1206', '1207', '1208', '1215', '1216','1217', '1218', '1219', '1220', '1221', '1222']
+
+    # List all possible radar files in range and find those that exist
+    files_t = [f'/nobackup/sccsb/radar/train/2018{mmdd}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+               for mi in range(0,60,5) for h in range(24) for mmdd in rainy_dates] 
+
+    #files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+    #             for mi in range(0,60,5) for h in range(10,19) for d in range(28,30) for mo in range(7,8)]
     list_test = []
     for file in files_t:
         if os.path.isfile(file):
             list_test.append(file)
-    test_loader, cube = prep_data(list_test)
+    test_loader, cube = prep_data(list_test, 'train')
 
     model = UNet(n_channels=3, n_classes=1)
-    model.load_state_dict(torch.load('milesial_unet_uk_15ep_0.01lr_h.pt'))
+    model.load_state_dict(torch.load('milesial_unet_10ep_0.01lr_new.pt')) #milesial_unet_uk_15ep_0.01lr_h.pt'))
     model.eval()
     show_outputs(model, test_loader, cube)
 
@@ -39,14 +45,19 @@ def chunks(l, n):
         yield l[i:i + n]
 
 #=============================================================================
-def prep_data(files):
+def prep_data(files, folder):
 
     # Regrid to a resolution x4 lower
     sample_points = [('projection_y_coordinate', np.linspace(-624500., 1546500., 543)),
                      ('projection_x_coordinate', np.linspace(-404500., 1318500., 431))]
 
     timeformat = "%Y%m%d%H%M" # this is how your timestamp looks like
-    regex = re.compile("^/nobackup/sccsb/radar/(\d*)")
+    #regex = re.compile("^/nobackup/sccsb/radar/(\d*)")
+
+    if folder == 'train':
+        regex = re.compile("^/nobackup/sccsb/radar/train/(\d*)")
+    elif folder == 'test':
+        regex = re.compile("^/nobackup/sccsb/radar/test/(\d*)")
 
     def gettimestamp(thestring):
         m = regex.search(thestring)
@@ -123,7 +134,7 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         x = self.outc(x)
-        return x #torch.sigmoid(x)
+        return x
 
 #===============================================================================
 # sub-parts of the U-Net model
@@ -224,7 +235,7 @@ def show_outputs(net, loader, cube):
         val_outputs = net(inputs)
 
         # Normalise data
-        val_outputs = val_outputs / val_outputs.max()
+        #val_outputs = val_outputs / val_outputs.max()
         print(val_outputs.max())
 
         val_outputs[np.where(val_outputs < 0.)] = 0.
@@ -276,7 +287,7 @@ def predict_1hr(sequence, net):
     print('forward pass')
     val_outputs = net(inputs)
     # Normalise data
-    val_outputs = val_outputs / val_outputs.max()
+    #val_outputs = val_outputs / val_outputs.max()
     print(val_outputs.max())
     #val_outputs[np.where(val_outputs > 32.)] = 32.
     val_outputs[np.where(val_outputs < 0.)] = 0.
