@@ -18,29 +18,45 @@ import re
 def main(nepochs, lr):
     print(nepochs, lr)
 
+    rainy_dates = ['0102', '0103', '0104', '0114', '0115', '0116', '0117', '0121',
+                   '0122', '0123', '0124', '0128', '0130', '0131', '0208', '0209',
+                   '0210', '0212', '0214', '0218', '0401', '0402', '0403', '0404',
+                   '0409', '0424', '0427', '0501', '0512', '0727', '0728', '0729',
+                   '0809', '0810', '0811', '0812', '0815', '0818', '0824', '0826',
+                   '1007', '1008', '1011', '1012', '1013', '1014', '1031', '1102',
+                   '1103', '1106', '1107'] #, '1108', '1109'] #, '1110', '1112', '1113'
+                   #'1120', '1127', '1128', '1129', '1130']
+    val_dates = ['0304', '0305', '0309', '0310', '0311', '0314', '0315', '0322',
+                 '0326', '0327', '0329', '0330', '0602', '0613', '0619', '0910',
+                 '0911', '0915', '0917', '0918', '0919', '0920', '0922', '1201']#,
+                 #'1202', '1204', '1205', '1206', '1207', '1208', '1215', '1216',
+                 #'1217', '1218', '1219', '1220', '1221', '1222']
+
     # List all possible radar files in range and find those that exist
-    files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for mi in range(0,60,5) for h in range(24) for d in range(25) for mo in range(5,6)]
+    files_t = [f'/nobackup/sccsb/radar/train/2018{mmdd}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+               for mi in range(0,60,5) for h in range(24) for mmdd in rainy_dates] #d in range(25) for mo in range(5,6)]
+
     list_train = []
     for file in files_t:
         if os.path.isfile(file):
             list_train.append(file)
-    train_loader = prep_data(list_train)
+    train_loader = prep_data(list_train, 'train')
 
-    files_v = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
-               for mi in range(0,60,5) for h in range(24) for d in range(25,28) for mo in range(5,6)]
+    files_v = [f'/nobackup/sccsb/radar/test/2018{mmdd}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+               for mi in range(0,60,5) for h in range(24) for mmdd in val_dates] #range(25,28) for mo in range(5,6)]
+    #files_v = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+    #           for mi in range(0,60,5) for h in range(24) for d in range(25,28) for mo in range(5,6)]
     list_val = []
     for file in files_v:
         if os.path.isfile(file):
             list_val.append(file)
-    val_loader = prep_data(list_val)
+    val_loader = prep_data(list_val, 'test')
 
     unet = UNet(n_channels=3, n_classes=1)
 
     trained_net = train_net(unet, train_loader, val_loader,
                             batch_size=100, n_epochs=nepochs, learning_rate=lr)
-    torch.save(trained_net.state_dict(), 'milesial_unet_uk_{}ep_{}lr_h2.pt'.format(str(nepochs), str(lr)))
-    
+    torch.save(trained_net.state_dict(), 'milesial_unet_{}ep_{}lr_new.pt'.format(str(nepochs), str(lr)))    
 #===============================================================================
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
@@ -48,14 +64,18 @@ def chunks(l, n):
         yield l[i:i + n]
 
 #=============================================================================
-def prep_data(files):
+def prep_data(files, folder):
 
     # Regrid to a resolution x4 lower
     sample_points = [('projection_y_coordinate', np.linspace(-624500., 1546500., 543)),
                      ('projection_x_coordinate', np.linspace(-404500., 1318500., 431))]
 
-    timeformat = "%Y%m%d%H%M"
-    regex = re.compile("^/nobackup/sccsb/radar/(\d*)")
+    timeformat = "%Y%m%d%H%M" # this is how your timestamp looks like
+
+    if folder == 'train':
+        regex = re.compile("^/nobackup/sccsb/radar/train/(\d*)")
+    elif folder == 'test':
+        regex = re.compile("^/nobackup/sccsb/radar/test/(\d*)")
 
     def gettimestamp(thestring):
         m = regex.search(thestring)
@@ -86,9 +106,9 @@ def prep_data(files):
         cube1 = cube.interpolate(sample_points, iris.analysis.Linear())
         data = cube1.data
 
-        # Set limit of large values - have asked Tim Darlington about these large values
+        # Set limit of large values # or to missing? - have asked Tim Darlington about these large values
         data[np.where(data < 0)] = 0.
-        data[np.where(data > 32)] = 32. 
+        data[np.where(data > 32)] = 32. #-1./32 
 
         # Normalise data
         data = data / 32.
@@ -199,13 +219,16 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
             val_outputs = net(inputs)
             val_loss_size = loss(val_outputs[0], labels)
             total_val_loss += val_loss_size.data.item()
+            #print(val_loss_size, total_val_loss, len(val_loader))
 
         print('total_val_loss = ', total_val_loss)
         print("Validation loss = {:.2f}".format(total_val_loss / float(len(val_loader)))) #check this is printing what we expect
 
     print("Training finished, took {:.2f}s".format(time.time() - training_start_time))
 
-    return(net)
+    #torch.save(net.state_dict(), 'milesial_unet_model.pt')
+
+    return(net) #total_val_loss, len(val_loader))
 
 #===============================================================================
 # full assembly of the sub-parts to form the complete net
