@@ -15,7 +15,7 @@ import iris.plot as iplt
 import pdb
 
 def animate():
-    filepath = '/scratch/cbarth/phd/img4/'
+    filepath = '/windows/m-drive/depot/ClaireBartholomew/phd/img3/' #scratch/cbarth/phd/img4/'
 
     fig = plt.figure(figsize=(12,6))
     ax1 = plt.subplot(121)
@@ -25,7 +25,7 @@ def animate():
     myimages = []
 
     # loops through available pngs
-    for batch in range(35, 39): #21, 27):
+    for batch in range(5): #35, 39): #21, 27):
         print('batch = {}'.format(batch))
         for f in range(16):
 
@@ -49,7 +49,7 @@ def animate():
         # save animation
         #my_anim.save('truth_anim.mp4')
         #my_anim.save('predict_anim.mp4')
-        my_anim.save('both_anim_{}.mp4'.format(batch))
+        my_anim.save('comparison_h_anim_{}.mp4'.format(batch))
 
 #===============================================================================
 def main():

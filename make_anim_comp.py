@@ -15,7 +15,7 @@ import iris.plot as iplt
 import pdb
 
 def animate():
-    filepath = '/windows/m-drive/depot/ClaireBartholomew/phd/comp/' #scratch/cbarth/phd/img4/'
+    filepath = '/scratch/cbarth/phd/img6/'
 
     fig = plt.figure(figsize=(12,6))
     #ax1 = plt.subplot(111)
@@ -25,7 +25,7 @@ def animate():
     myimages = []
 
     # loops through available pngs
-    for batch in range(5): #35, 39): #21, 27):
+    for batch in range(26, 32): #10, 16): #35, 39): #21, 27):
         print('batch = {}'.format(batch))
         for f in range(16):
 
@@ -42,6 +42,8 @@ def animate():
 
             # append AxesImage object to the list
             myimages.append([imgplot])
+
+            
 
         ## create an instance of animation
         my_anim = animation.ArtistAnimation(fig, myimages, interval=500, repeat = True)
