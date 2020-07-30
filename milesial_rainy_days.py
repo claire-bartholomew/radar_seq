@@ -24,13 +24,14 @@ def main(nepochs, lr):
                    '0409', '0424', '0427', '0501', '0512', '0727', '0728', '0729',
                    '0809', '0810', '0811', '0812', '0815', '0818', '0824', '0826',
                    '1007', '1008', '1011', '1012', '1013', '1014', '1031', '1102',
-                   '1103', '1106', '1107'] #, '1108', '1109'] #, '1110', '1112', '1113'
-                   #'1120', '1127', '1128', '1129', '1130']
-    val_dates = ['0304', '0305', '0309', '0310', '0311', '0314', '0315', '0322',
-                 '0326', '0327', '0329', '0330', '0602', '0613', '0619', '0910',
-                 '0911', '0915', '0917', '0918', '0919', '0920', '0922', '1201']#,
-                 #'1202', '1204', '1205', '1206', '1207', '1208', '1215', '1216',
-                 #'1217', '1218', '1219', '1220', '1221', '1222']
+                   '1103', '1106', '1107', '1108', '1109', '1110', '1112', '1113',
+                   '1120', '1127', '1128', '1129', '1130', '0304', '0305', '0309',
+                   '0310', '0311', '0314', '0315', '0322', '0326', '0327', '0329',
+                   '0330', '0602', '0613', '0619', '0910', '0911', '0915', '0917',
+                   '0918', '0919', '0920', '0922', '1201', '1202', '1204', '1205',
+                   '1206', '1207', '1208', '1215', '1216', '1217', '1218', '1219',
+                   '1220', '1221']
+    val_dates = ['1222']
 
     # List all possible radar files in range and find those that exist
     files_t = [f'/nobackup/sccsb/radar/train/2018{mmdd}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
@@ -50,13 +51,14 @@ def main(nepochs, lr):
     for file in files_v:
         if os.path.isfile(file):
             list_val.append(file)
-    val_loader = prep_data(list_val, 'test')
+    val_loader = prep_data(list_val, 'train')
 
     unet = UNet(n_channels=3, n_classes=1)
 
     trained_net = train_net(unet, train_loader, val_loader,
                             batch_size=100, n_epochs=nepochs, learning_rate=lr)
     torch.save(trained_net.state_dict(), 'milesial_unet_{}ep_{}lr_new.pt'.format(str(nepochs), str(lr)))    
+
 #===============================================================================
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
@@ -74,8 +76,8 @@ def prep_data(files, folder):
 
     if folder == 'train':
         regex = re.compile("^/nobackup/sccsb/radar/train/(\d*)")
-    elif folder == 'test':
-        regex = re.compile("^/nobackup/sccsb/radar/test/(\d*)")
+    #elif folder == 'test':
+    #    regex = re.compile("^/nobackup/sccsb/radar/test/(\d*)")
 
     def gettimestamp(thestring):
         m = regex.search(thestring)
@@ -108,10 +110,10 @@ def prep_data(files, folder):
 
         # Set limit of large values # or to missing? - have asked Tim Darlington about these large values
         data[np.where(data < 0)] = 0.
-        data[np.where(data > 32)] = 32. #-1./32 
+        data[np.where(data > 64)] = 64. #-1./32 
 
         # Normalise data
-        data = data / 32.
+        data = data / 64.
 
         # Binarise data 
         #dataset[np.where(dataset < 0)] = 0.
@@ -170,12 +172,12 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
 
             #Get inputs from training data
             inputs, labels = data[:,:3], data[:,3]
-
+            #pdb.set_trace()
             #Wrap them in a Variable object
             inputs, labels = Variable(inputs), Variable(labels)
 
             # Run the forward pass https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/
-            outputs = net(inputs)
+            outputs = net(inputs) * 64.
 
             print('inputs = {}'.format(inputs.max()))
             print('outputs = {}'.format(outputs.max()))
@@ -208,25 +210,25 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
                 running_loss = 0.0
                 start_time = time.time()
 
-        #At the end of the epoch, do a pass on the validation set
-        total_val_loss = 0
-        for data in val_loader:
-            inputs, labels = data[:,:3], data[:,3]
-            #Wrap tensors in Variables
-            inputs, labels = Variable(inputs), Variable(labels)
+        ##At the end of the epoch, do a pass on the validation set
+        #total_val_loss = 0
+        #for data in val_loader:
+        #    inputs, labels = data[:,:3], data[:,3]
+        #    #Wrap tensors in Variables
+        #    inputs, labels = Variable(inputs), Variable(labels)
 
-            #Forward pass
-            val_outputs = net(inputs)
-            val_loss_size = loss(val_outputs[0], labels)
-            total_val_loss += val_loss_size.data.item()
-            #print(val_loss_size, total_val_loss, len(val_loader))
+        #    #Forward pass
+        #    val_outputs = net(inputs)
+        #    val_loss_size = loss(val_outputs[0], labels)
+        #    total_val_loss += val_loss_size.data.item()
+        #    #print(val_loss_size, total_val_loss, len(val_loader))
 
-        print('total_val_loss = ', total_val_loss)
-        print("Validation loss = {:.2f}".format(total_val_loss / float(len(val_loader)))) #check this is printing what we expect
+        #print('total_val_loss = ', total_val_loss)
+        #print("Validation loss = {:.2f}".format(total_val_loss / float(len(val_loader)))) #check this is printing what we expect
 
     print("Training finished, took {:.2f}s".format(time.time() - training_start_time))
 
-    #torch.save(net.state_dict(), 'milesial_unet_model.pt')
+    torch.save(net.state_dict(), 'milesial_unet_model.pt')
 
     return(net) #total_val_loss, len(val_loader))
 
@@ -247,7 +249,9 @@ class UNet(nn.Module):
         self.outc = outconv(64, n_classes)
 
     def forward(self, x):
+        print(x.size())
         x1 = self.inc(x)
+        print(x1.size())
         x2 = self.down1(x1)
         x3 = self.down2(x2)
         x4 = self.down3(x3)
@@ -257,7 +261,7 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         x = self.outc(x)
-        return x #torch.sigmoid(x)
+        return torch.sigmoid(x)
 
 #===============================================================================
 # sub-parts of the U-Net model
