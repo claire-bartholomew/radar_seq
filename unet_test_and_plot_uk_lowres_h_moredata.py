@@ -19,10 +19,10 @@ import Decomposition_2017 as Decomposition
 #===============================================================================
 def main():
 
-    rainy_dates = ['1127','1109'] # '1108', '1109', '1110', '1112', '1113','1120', '1127', '1128', '1129', '1130','1202', '1204', '1205', '1206', '1207', '1208', '1215', '1216','1217', '1218', '1219', '1220', '1221', '1222']
+    rainy_dates = ['1215', '1218', '1206'] #'1127','1109'] # '1108', '1109', '1110', '1112', '1113','1120', '1127', '1128', '1129', '1130','1202', '1204', '1205', '1206', '1207', '1208', '1215', '1216','1217', '1218', '1219', '1220', '1221', '1222']
 
-    # List all possible radar files in range and find those that exist
-    files_t = [f'/nobackup/sccsb/radar/train/2018{mmdd}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
+    # List all possible radar files in range and find those that exist #test or train dir
+    files_t = [f'/nobackup/sccsb/radar/test/2018{mmdd}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
                for mi in range(0,60,5) for h in range(24) for mmdd in rainy_dates] 
 
     #files_t = [f'/nobackup/sccsb/radar/2018{mo:02}{d:02}{h:02}{mi:02}_nimrod_ng_radar_rainrate_composite_1km_UK' \
@@ -31,7 +31,7 @@ def main():
     for file in files_t:
         if os.path.isfile(file):
             list_test.append(file)
-    test_loader, cube = prep_data(list_test, 'train')
+    test_loader, cube = prep_data(list_test, 'test') #'train')
 
     model = UNet(n_channels=3, n_classes=1)
     model.load_state_dict(torch.load('milesial_unet_10ep_0.01lr_new.pt')) #milesial_unet_uk_15ep_0.01lr_h.pt'))
@@ -90,10 +90,10 @@ def prep_data(files, folder):
 
         # Set limit of large values # or to missing? - have asked Tim Darlington about these large values
         data[np.where(data < 0)] = 0.
-        data[np.where(data > 32)] = 32. #-1./32 
+        data[np.where(data > 64)] = 64. #-1./32 
 
         # Normalise data
-        data = data / 32.
+        data = data / 64.
 
         # Binarise data 
         #dataset[np.where(dataset < 0)] = 0.
@@ -134,7 +134,7 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         x = self.outc(x)
-        return x
+        return torch.sigmoid(x)
 
 #===============================================================================
 # sub-parts of the U-Net model
@@ -232,7 +232,7 @@ def show_outputs(net, loader, cube):
         #if ((inputs.mean() > 0.001) & (count<20)):
         count += 1
         #Forward pass
-        val_outputs = net(inputs)
+        val_outputs = net(inputs) * 64.
 
         # Normalise data
         #val_outputs = val_outputs / val_outputs.max()
@@ -248,15 +248,20 @@ def show_outputs(net, loader, cube):
             print('step = {}'.format(step))
             sequence = predict_1hr(sequence, net)
 
+        colors = ['black', 'cornflowerblue', 'royalblue', 'blue', 'lime', 'yellow', 'orange', 'red', 'fuchsia'] #, 'white']
+        levels = [0, 0.1, 0.25, 0.5, 1., 2., 4., 8. ,16., 32.]
+
         for i in range(16):
             print('start figure')
             fig = plt.figure()
             ax = fig.add_subplot(1,2,1)
             cube.data = sequence[0,i].detach().numpy()
-            cf = iplt.contourf(cube, cmap=plt.cm.Blues, vmin=0, vmax=1) #32)
-            plt.gca().coastlines('50m')
-            plt.setp(ax.xaxis.get_ticklabels(), visible=False)
-            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+            #cf = iplt.contourf(cube, cmap=plt.cm.Blues, vmin=0, vmax=1) #32) #64)
+            cf = iplt.contourf(cube, levels, colors=colors)
+            cf.cmap.set_over('white')
+            plt.gca().coastlines('50m', color='white')
+            #plt.setp(ax.xaxis.get_ticklabels(), visible=False)
+            #plt.setp(ax.yaxis.get_ticklabels(), visible=False)
             plt.title('U-net t+{}'.format(i))
             #plt.tight_layout()
             #plt.savefig('/home/home01/sccsb/radar_seq/img3/batch{}_im{}.png'.format(b, i))
@@ -264,8 +269,9 @@ def show_outputs(net, loader, cube):
             #fig = plt.figure()
             ax = fig.add_subplot(1,2,2)
             cube.data = truth[0,i].detach().numpy()
-            cf = iplt.contourf(cube, cmap=plt.cm.Blues, vmin=0, vmax=1) #32)
-            plt.gca().coastlines('50m')
+            cf = iplt.contourf(cube, levels, colors=colors)
+            #cf = iplt.contourf(cube, cmap=plt.cm.Blues, vmin=0, vmax=1) #32)
+            plt.gca().coastlines('50m', color='white')
             #plt.setp(ax.xaxis.get_ticklabels(), visible=False)
             #plt.setp(ax.yaxis.get_ticklabels(), visible=False)
             plt.title('Truth t+{}'.format(i))
@@ -285,7 +291,7 @@ def predict_1hr(sequence, net):
     inputs = Variable(inputs)
     #Forward pass
     print('forward pass')
-    val_outputs = net(inputs)
+    val_outputs = net(inputs) * 64.
     # Normalise data
     #val_outputs = val_outputs / val_outputs.max()
     print(val_outputs.max())
