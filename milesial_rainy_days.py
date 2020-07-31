@@ -28,9 +28,9 @@ def main(nepochs, lr):
                    '1120', '1127', '1128', '1129', '1130', '0304', '0305', '0309',
                    '0310', '0311', '0314', '0315', '0322', '0326', '0327', '0329',
                    '0330', '0602', '0613', '0619', '0910', '0911', '0915', '0917',
-                   '0918', '0919', '0920', '0922', '1201', '1202', '1204', '1205',
-                   '1206', '1207', '1208', '1215', '1216', '1217', '1218', '1219',
-                   '1220', '1221']
+                   '0918', '0919', '0920', '0922', '1201', '1202', '1204'] #, '1205',
+                   #'1206', '1207', '1208', '1215', '1216', '1217', '1218', '1219',
+                   #'1220', '1221']
     val_dates = ['1222']
 
     # List all possible radar files in range and find those that exist
@@ -177,7 +177,7 @@ def train_net(net, train_loader, val_loader, batch_size, n_epochs, learning_rate
             inputs, labels = Variable(inputs), Variable(labels)
 
             # Run the forward pass https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/
-            outputs = net(inputs) * 64.
+            outputs = net(inputs)
 
             print('inputs = {}'.format(inputs.max()))
             print('outputs = {}'.format(outputs.max()))
